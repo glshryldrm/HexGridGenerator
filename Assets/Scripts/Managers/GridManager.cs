@@ -6,12 +6,12 @@ public class GridManager : MonoBehaviour
 {
     public static GridManager Instance;
     public int radius;
-    public int desiredAngle;
     float hexRadius;
     float hexWidth;
     float hexHeight;
     GameObject gizmosPrefab;
-    public List<Hex> hexs = new List<Hex>();
+    [SerializeField] GameObject hexPrefab;
+    List<Hex> hexs = new List<Hex>();
     private void Awake()
     {
         Instance = this;
@@ -19,8 +19,7 @@ public class GridManager : MonoBehaviour
     }
     private void OnDrawGizmos()
     {
-        gizmosPrefab = Resources.Load("HexGridPrefab") as GameObject;
-        MeshRenderer meshRenderer = gizmosPrefab.GetComponentInChildren<MeshRenderer>();
+        MeshRenderer meshRenderer = hexPrefab.GetComponentInChildren<MeshRenderer>();
         hexWidth = meshRenderer.bounds.size.x;
         hexHeight = meshRenderer.bounds.size.y;
 
@@ -31,17 +30,21 @@ public class GridManager : MonoBehaviour
             for (int r = Mathf.Max(-radius, -q - radius); r <= Mathf.Min(radius, -q + radius); r++)
             {
                 Hex hexCoordinates = new Hex(q, r);
-                Vector3 position = HexToPosition(hexCoordinates);
-                Gizmos.DrawMesh(gizmosPrefab.GetComponentInChildren<MeshFilter>().sharedMesh,
-                    position,
-                    Quaternion.identity,
-                    gizmosPrefab.GetComponent<Transform>().localScale);
+                Vector3 originalPosition = HexToPosition(hexCoordinates);
+
+                Vector3 rotatedPosition = this.transform.rotation * originalPosition;
+
+                Gizmos.DrawWireMesh(hexPrefab.GetComponentInChildren<MeshFilter>().sharedMesh,
+                    rotatedPosition,
+                    this.transform.rotation,
+                    hexPrefab.GetComponent<Transform>().localScale);
                 Gizmos.color = Color.white;
                 GUIStyle style = new GUIStyle();
                 style.alignment = TextAnchor.MiddleCenter;
                 style.normal.textColor = Color.black;
+                
 #if UNITY_EDITOR
-                UnityEditor.Handles.Label(position, q.ToString() + " - " + r.ToString(), style);
+                UnityEditor.Handles.Label(rotatedPosition, q.ToString() + " - " + r.ToString(), style);
 #endif
             }
         }
@@ -52,29 +55,31 @@ public class GridManager : MonoBehaviour
     public void CreateHexGrid()
     {
 
-        MeshRenderer meshRenderer = GameAssets.Instance.gridPrefab.GetComponentInChildren<MeshRenderer>();
+        MeshRenderer meshRenderer = hexPrefab.GetComponentInChildren<MeshRenderer>();
         hexWidth = meshRenderer.bounds.size.x;
         hexHeight = meshRenderer.bounds.size.y;
-
-        if (GameAssets.Instance == null || GameAssets.Instance.gridPrefab == null) return;
 
         hexRadius = hexWidth / Mathf.Sqrt(3);
 
         GameObject gridsObj = new GameObject("Grids");
         gridsObj.transform.parent = this.transform;
+        gridsObj.transform.localRotation = this.transform.localRotation;
+
         for (int q = -radius; q <= radius; q++)
         {
             for (int r = Mathf.Max(-radius, -q - radius); r <= Mathf.Min(radius, -q + radius); r++)
             {
                 Hex hex = new Hex(q, r);
                 hex.vector = HexToPosition(hex);
+                Vector3 rotatedPosition = this.transform.rotation * hex.vector;
                 hexs.Add(hex);
-                GameObject hexObj = Instantiate(GameAssets.Instance.gridPrefab, hex.vector, Quaternion.identity);
+                GameObject hexObj = Instantiate(hexPrefab, 
+                    rotatedPosition, 
+                    this.transform.rotation);
                 hexObj.transform.parent = gridsObj.transform;
 
             }
         }
-        gridsObj.transform.rotation = Quaternion.Euler(desiredAngle, 0, 0);
     }
     public Vector3 HexToPosition(Hex hex)
     {

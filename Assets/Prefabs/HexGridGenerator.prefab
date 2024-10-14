@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4880220043534327702}
   - component: {fileID: 7110576047749969749}
   m_Layer: 0
-  m_Name: GridManager
+  m_Name: HexGridGenerator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -44,5 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: effc8b3b8ce469d49b52068b37f1d211, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  radius: 3
+  radius: 1
+  desiredAngle: 0
   hexs: []
